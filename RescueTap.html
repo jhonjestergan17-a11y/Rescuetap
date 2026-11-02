@@ -1,0 +1,511 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>RescueTap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow phone-first column. Gradient hero with a single big tap target,
+   then plain forms. Admin inbox is a simple list of report cards. */
+:root{
+  --bg:#F2F5FC; --surface:#FFFFFF; --fg:#0E1A36; --muted:#56637F; --line:#D8DFEE;
+  --blue:#1457D6; --red:#CF2634; --ok:#12794A; --warn:#A86000; --soft:#E8EEFB;
+  --g1:#0A3FA8; --g2:#1B6EF3; --g3:#D92D3A; --g4:#A8111E;
+  --grad:linear-gradient(150deg,var(--g1) 0%,var(--g2) 38%,var(--g3) 78%,var(--g4) 100%);
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#080E20; --surface:#111A33; --fg:#EAF0FF; --muted:#9BA9CB; --line:#243259;
+    --blue:#7BA8FF; --red:#FF7480; --ok:#4FD28D; --warn:#F3B24C; --soft:#17244A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#080E20; --surface:#111A33; --fg:#EAF0FF; --muted:#9BA9CB; --line:#243259;
+  --blue:#7BA8FF; --red:#FF7480; --ok:#4FD28D; --warn:#F3B24C; --soft:#17244A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 40px;min-height:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--g2);outline-offset:2px}
+.wrap{max-width:520px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance}
+p{margin:0}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.01em}
+.brand svg{width:30px;height:30px;flex:none}
+.link{background:none;border:0;padding:8px 4px;color:var(--blue);font-weight:600;font-size:15px}
+.link:hover{text-decoration:underline}
+
+/* hero */
+.hero{background:var(--grad);color:#fff;border-radius:0 0 28px 28px;margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));
+  padding:6px max(16px,env(safe-area-inset-left,0px)) 34px}
+.hero .bar{max-width:520px;margin:0 auto}
+.hero .link{color:#fff}
+.hero-body{max-width:520px;margin:0 auto;text-align:center;padding-top:10px}
+.hero h1{font-size:clamp(40px,12vw,56px);margin:6px 0 10px}
+.hero p.sub{max-width:34ch;margin:0 auto 26px;font-size:17px;opacity:.95}
+.tap{position:relative;width:196px;height:196px;border-radius:50%;border:0;background:#fff;color:var(--g4);
+  font-family:var(--display);font-weight:700;font-size:44px;letter-spacing:.02em;line-height:1;
+  box-shadow:0 14px 34px rgba(5,10,40,.4);display:inline-grid;place-items:center;text-align:center}
+.tap small{display:block;font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--g1);margin-top:6px}
+.tap::before,.tap::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(255,255,255,.55);pointer-events:none}
+.tap::after{inset:-30px;border-color:rgba(255,255,255,.28)}
+@media (prefers-reduced-motion:no-preference){
+  .tap::before{animation:ring 2.4s ease-out infinite}
+  .tap::after{animation:ring 2.4s ease-out .8s infinite}
+  @keyframes ring{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.18);opacity:0}}
+}
+.safety{margin:26px auto 0;max-width:38ch;font-size:14px;opacity:.92}
+
+.facts{display:grid;gap:12px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.fact b{display:block;font-family:var(--display);font-size:20px;letter-spacing:.01em}
+.fact span{color:var(--muted);font-size:15px}
+
+/* forms */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px}
+.head{padding:8px 0 2px}
+.head h2{font-size:34px}
+.head p{color:var(--muted);margin-top:6px}
+label.f,.lab{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.opt{color:var(--muted);font-weight:400}
+input[type=text],input[type=password],select,textarea{width:100%;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+textarea{min-height:110px;resize:vertical}
+.stack{display:grid;gap:16px}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;margin:0}
+.chip span{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:13px 14px;font-weight:600;min-height:52px}
+.chip i{width:12px;height:12px;border-radius:50%;flex:none;background:var(--c)}
+.chip input:checked+span{border-color:var(--blue);background:var(--soft);box-shadow:inset 0 0 0 1px var(--blue)}
+.chip input:focus-visible+span{outline:3px solid var(--g2);outline-offset:2px}
+.chip:last-child:nth-child(odd){grid-column:1/-1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;border:0;padding:14px 20px;font-weight:600;min-height:50px}
+.btn.primary{background:var(--grad);color:#fff;width:100%;font-size:17px}
+.btn.primary[disabled]{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:var(--bg);border:1.5px solid var(--line)}
+.btn.sm{min-height:40px;padding:8px 14px;font-size:14px;border-radius:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px;min-width:0}
+.photo-prev{display:none;position:relative;margin-top:12px}
+.photo-prev.on{display:block}
+.photo-prev img{display:block;width:100%;max-height:260px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+.photo-prev button{position:absolute;top:8px;right:8px}
+.toggle{display:flex;align-items:flex-start;gap:12px}
+.toggle input{width:22px;height:22px;margin-top:2px;accent-color:var(--blue);flex:none}
+.toggle small{display:block;color:var(--muted);font-size:14px}
+details.more{border:1.5px dashed var(--line);border-radius:14px;padding:4px 14px}
+details.more summary{cursor:pointer;font-weight:600;padding:12px 0;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"+";font-size:22px;line-height:1;color:var(--blue)}
+details.more[open] summary::after{content:"\2212"}
+details.more .stack{padding-bottom:14px}
+.err{color:var(--red);font-weight:600;font-size:14px;margin-top:8px}
+.note{color:var(--muted);font-size:13px}
+
+/* done */
+.done{text-align:center;padding:40px 8px 10px}
+.check{width:84px;height:84px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto 18px}
+.check svg{width:44px;height:44px}
+.code{display:inline-block;margin:16px 0 6px;padding:10px 18px;border-radius:12px;background:var(--soft);font-family:var(--display);font-size:30px;font-weight:700;letter-spacing:.06em}
+
+/* admin */
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--soft)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--c,var(--blue))}
+.tabs{display:flex;gap:8px;margin:14px 0 4px;flex-wrap:wrap}
+.tab{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px}
+.tab[aria-pressed=true]{background:var(--grad);color:#fff;border-color:transparent}
+.rep{display:grid;gap:10px;border-left:6px solid var(--c,var(--blue))}
+.rep.resolved{opacity:.65}
+.rep .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.rep .meta{color:var(--muted);font-size:14px}
+.rep .who{font-size:14px}
+.rep p.det{white-space:pre-wrap;overflow-wrap:anywhere}
+.rep img{width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--line);cursor:zoom-in}
+.tag{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)}
+.stat{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+.counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.counts div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.counts b{display:block;font-family:var(--display);font-size:34px;line-height:1}
+.counts div:nth-child(2) b{color:var(--red)}
+.counts span{color:var(--muted);font-size:13px}
+.empty{text-align:center;padding:34px 12px;color:var(--muted)}
+.empty b{display:block;font-family:var(--display);font-size:24px;color:var(--fg);margin-bottom:4px}
+.lightbox{position:fixed;inset:0;z-index:50;background:rgba(4,8,22,.88);display:grid;place-items:center;padding:20px}
+.lightbox img{max-width:100%;max-height:100%;border-radius:12px}
+</style>
+
+<main>
+<!-- HOME -->
+<section data-view="home">
+  <div class="hero">
+    <div class="bar">
+      <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#fff"/><circle cx="16" cy="16" r="8" fill="none" stroke="#1B6EF3" stroke-width="3"/><circle cx="16" cy="16" r="3.4" fill="#D92D3A"/></svg>RescueTap</div>
+      <button class="link" data-go="login">Admin</button>
+    </div>
+    <div class="hero-body">
+      <h1>Something wrong? Tap to report.</h1>
+      <p class="sub">Send a quick report in seconds. You can stay anonymous and add a photo.</p>
+      <button class="tap" data-go="report" aria-label="Start an emergency report"><span>TAP<small>to report</small></span></button>
+      <p class="safety">In immediate danger? Call your local emergency number first, then send a report here.</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="facts">
+      <div class="fact"><b>Anonymous by default</b><span>No name or contact is asked unless you choose to share it.</span></div>
+      <div class="fact"><b>One-tap photo</b><span>Open the camera or pick a picture so responders can see what you see.</span></div>
+      <div class="fact"><b>Details are optional</b><span>Send fast now. Add what happened, who is hurt and how urgent it is if you can.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- REPORT -->
+<section data-view="report" hidden>
+  <div class="wrap">
+    <div class="bar"><button class="link" data-go="home">&larr; Back</button><div class="brand">RescueTap</div></div>
+    <div class="head"><h2>Quick report</h2><p>Pick what is happening. Everything else is optional.</p></div>
+
+    <div class="card stack">
+      <div>
+        <span class="lab" id="typeLab">What is happening?</span>
+        <div class="chips" role="radiogroup" aria-labelledby="typeLab" id="types"></div>
+      </div>
+      <div>
+        <span class="lab">Photo or video <span class="opt">(optional)</span></span>
+        <div class="row">
+          <label class="btn ghost" for="cam">Take a photo</label>
+          <label class="btn ghost" for="vidIn">Record a video</label>
+          <label class="btn ghost" for="gal">Choose a picture</label>
+        </div>
+        <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+        <input id="vidIn" type="file" accept="video/*" capture="environment" hidden>
+        <input id="gal" type="file" accept="image/*" hidden>
+        <div class="photo-prev" id="prev"><img id="prevImg" alt="Photo attached to your report"><video id="prevVid" controls playsinline hidden style="width:100%;max-height:260px;border-radius:12px"></video><button class="btn sm ghost" id="rmPhoto" type="button">Remove</button></div>
+        <p class="err" id="photoErr" hidden></p>
+      </div>
+      <div>
+        <label class="f" for="loc">Where? <span class="opt">(building, room or landmark)</span></label>
+        <input id="loc" type="text" autocomplete="off" maxlength="120" placeholder="e.g. Science Building, 2nd floor hallway">
+      </div>
+
+      <details class="more" id="more">
+        <summary>Add details of what happened</summary>
+        <div class="stack">
+          <div>
+            <label class="f" for="urg">How urgent is it?</label>
+            <select id="urg"><option value="High">Someone may be in danger now</option><option value="Medium" selected>Needs help soon</option><option value="Low">Not urgent, just reporting</option></select>
+          </div>
+          <div>
+            <label class="f" for="det">What happened?</label>
+            <textarea id="det" maxlength="1200" placeholder="Describe what you saw, how many people are involved, and whether anyone is hurt."></textarea>
+          </div>
+        </div>
+      </details>
+
+      <div class="toggle">
+        <input id="anon" type="checkbox" checked>
+        <label for="anon"><b>Stay anonymous</b><small>Turn off to share your name and contact with the responders.</small></label>
+      </div>
+      <div class="stack" id="idBox" hidden>
+        <div><label class="f" for="nm">Your name</label><input id="nm" type="text" autocomplete="name" maxlength="80"></div>
+        <div><label class="f" for="ct">Phone or email</label><input id="ct" type="text" autocomplete="off" maxlength="80"></div>
+      </div>
+
+      <div>
+        <button class="btn primary" id="send" type="button" disabled>Send report</button>
+        <p class="err" id="sendErr" hidden></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DONE -->
+<section data-view="done" hidden>
+  <div class="wrap done">
+    <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Report sent</h2>
+    <p style="margin-top:8px;color:var(--muted)">Responders can now see your report. Stay somewhere safe.</p>
+    <div class="code" id="refCode">RT-0000</div>
+    <p class="note">Reference code. Keep it if you want to follow up.</p>
+    <p class="note" id="localNote" hidden style="margin-top:10px">Demo mode: this report is stored on this device only.</p>
+    <div style="margin-top:26px;display:grid;gap:10px"><button class="btn primary" data-go="report">Send another report</button><button class="btn ghost" data-go="home">Back to home</button></div>
+  </div>
+</section>
+
+<!-- LOGIN -->
+<section data-view="login" hidden>
+  <div class="wrap">
+    <div class="bar"><button class="link" data-go="home">&larr; Back</button><div class="brand">RescueTap</div></div>
+    <div class="head"><h2>Admin sign in</h2><p>Type your admin account to open the reports inbox.</p></div>
+    <form class="card stack" id="loginForm" autocomplete="off">
+      <div><label class="f" for="au">Account</label><input id="au" type="text" autocapitalize="none" autocomplete="off" required></div>
+      <div><label class="f" for="ap">Passcode</label><input id="ap" type="password" autocomplete="off" required></div>
+      <button class="btn primary" type="submit">Open inbox</button>
+      <p class="err" id="loginErr" hidden>Account or passcode is not right. Try again.</p>
+      <p class="note">School prototype demo account: <b>admin</b> / <b>rescue123</b></p>
+    </form>
+  </div>
+</section>
+
+<!-- INBOX -->
+<section data-view="inbox" hidden>
+  <div class="wrap">
+    <div class="bar"><div class="brand">Inbox</div><button class="link" id="logout">Sign out</button></div>
+    <div class="stat"><span class="pill"><i id="modeDot"></i><span id="modeTxt"></span></span><span class="note" id="countTxt"></span></div>
+    <div class="counts"><div><b id="cTotal">0</b><span>Total reports</span></div><div><b id="cNew">0</b><span>New</span></div><div><b id="cRes">0</b><span>Resolved</span></div></div>
+    <div class="tabs" role="group" aria-label="Filter reports">
+      <button class="tab" data-f="all" aria-pressed="true">All</button>
+      <button class="tab" data-f="new" aria-pressed="false">New</button>
+      <button class="tab" data-f="resolved" aria-pressed="false">Resolved</button>
+    </div>
+    <div id="list" class="stack" style="margin-top:10px"></div>
+  </div>
+</section>
+</main>
+
+<div class="lightbox" id="lb" hidden><img id="lbImg" alt="Report photo, enlarged"></div>
+
+<script>
+(function(){
+  var TYPES=[
+    {k:"Fire",c:"#E5412D"},{k:"Medical",c:"#2F7BF0"},{k:"Accident",c:"#E39B14"},
+    {k:"Safety threat",c:"#B3122A"},{k:"Other",c:"#6B7A99"}];
+  var ADMIN={user:"admin",pass:"rescue123"};
+  var LS_KEY="rescuetap.reports.v1", SS_KEY="rescuetap.admin";
+  var $=function(s,r){return (r||document).querySelector(s)};
+  var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+
+  var db=null, remote=[], remoteIds={}, subscribed=false, filter="all", isAdmin=false;
+  var st={type:null,photo:null};
+
+  /* ---------- storage (shared db when available, else this device) ---------- */
+  function lsRead(){try{return JSON.parse(localStorage.getItem(LS_KEY)||"[]")}catch(e){return []}}
+  function lsWrite(a){try{localStorage.setItem(LS_KEY,JSON.stringify(a));return true}catch(e){return false}}
+  function color(t){for(var i=0;i<TYPES.length;i++)if(TYPES[i].k===t)return TYPES[i].c;return "#6B7A99"}
+
+  async function initDb(){
+    try{
+      if(window.claude&&window.claude.use){db=await window.claude.use("db")}
+    }catch(e){db=null}
+    if(isAdmin)startSub();
+  }
+  function startSub(){
+    if(!db||subscribed)return; subscribed=true;
+    try{
+      db.collection("reports").orderBy("createdAt","desc").onSnapshot(function(s){
+        remote=s.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;o._src="shared";return o});
+        remoteIds={};remote.forEach(function(r){remoteIds[r.id]=1});
+        renderInbox();
+      },function(){remote=[];remoteIds={};renderInbox()});
+    }catch(e){subscribed=false}
+  }
+  function allReports(){
+    var loc=lsRead().filter(function(r){return !remoteIds[r.id]}).map(function(r){r._src="device";return r});
+    return remote.concat(loc).sort(function(a,b){return b.createdAt-a.createdAt});
+  }
+
+  /* ---------- views ---------- */
+  function go(name){
+    if(name==="login"&&isAdmin)name="inbox";
+    $$("[data-view]").forEach(function(s){s.hidden=s.getAttribute("data-view")!==name});
+    window.scrollTo(0,0);
+    if(name==="inbox"){startSub();renderInbox()}
+    if(name==="report")validate();
+  }
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("[data-go]");if(b){e.preventDefault();go(b.getAttribute("data-go"))}
+  });
+
+  /* ---------- report form ---------- */
+  var typesBox=$("#types");
+  TYPES.forEach(function(t,i){
+    var l=document.createElement("label");l.className="chip";
+    l.innerHTML='<input type="radio" name="type" value="'+t.k+'" id="t'+i+'"><span><i style="--c:'+t.c+'"></i>'+t.k+'</span>';
+    typesBox.appendChild(l);
+  });
+  typesBox.addEventListener("change",function(e){st.type=e.target.value;validate()});
+  function validate(){$("#send").disabled=!st.type}
+
+  $("#anon").addEventListener("change",function(){$("#idBox").hidden=this.checked});
+
+  function compress(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file),img=new Image();
+      img.onload=function(){
+        var max=960,w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,max/Math.max(w,h));
+        var c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        var q=.72,d=c.toDataURL("image/jpeg",q);
+        while(d.length>170000&&q>.35){q-=.1;d=c.toDataURL("image/jpeg",q)}
+        URL.revokeObjectURL(url);res(d);
+      };
+      img.onerror=function(){URL.revokeObjectURL(url);rej(new Error("bad image"))};
+      img.src=url;
+    });
+  }
+  async function onPhoto(e){
+    var f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+    $("#photoErr").hidden=true;
+    try{
+      st.photo=await compress(f);
+      st.video=null;$("#prevVid").hidden=true;$("#prevImg").hidden=false;
+      $("#prevImg").src=st.photo;$("#prev").classList.add("on");
+    }catch(err){
+      $("#photoErr").textContent="That file could not be read as a picture. Try another one.";$("#photoErr").hidden=false;
+    }
+  }
+  $("#cam").addEventListener("change",onPhoto);
+  $("#gal").addEventListener("change",onPhoto);
+  $("#rmPhoto").addEventListener("click",function(){st.photo=null;st.video=null;$("#prev").classList.remove("on");$("#prevImg").removeAttribute("src");$("#prevVid").removeAttribute("src");$("#prevVid").hidden=true;$("#prevImg").hidden=false});
+  $("#vidIn").addEventListener("change",function(e){
+    var f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+    if(f.size>60*1024*1024){$("#photoErr").textContent="That video is too big. Record a shorter clip (under 60 MB).";$("#photoErr").hidden=false;return}
+    $("#photoErr").hidden=true;st.photo=null;st.video=f;
+    var pv=$("#prevVid");pv.src=URL.createObjectURL(f);pv.hidden=false;$("#prevImg").hidden=true;$("#prev").classList.add("on");
+  });
+  function idb(){return new Promise(function(res,rej){var q=indexedDB.open("rescuetap",1);q.onupgradeneeded=function(){q.result.createObjectStore("v")};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
+  function idbPut(k,b){return idb().then(function(d){return new Promise(function(res,rej){var t=d.transaction("v","readwrite");t.objectStore("v").put(b,k);t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)}})})}
+  function idbGet(k){return idb().then(function(d){return new Promise(function(res,rej){var r=d.transaction("v").objectStore("v").get(k);r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})})}
+  function hydrateVideos(){
+    $$("[data-vid]").forEach(function(el){
+      idbGet(el.getAttribute("data-vid")).then(function(b){
+        if(!b){el.innerHTML='<span class="meta">Video was recorded on another device.</span>';return}
+        var v=document.createElement("video");v.controls=true;v.playsInline=true;v.src=URL.createObjectURL(b);
+        v.style.cssText="width:100%;max-height:260px;border-radius:12px";el.innerHTML="";el.appendChild(v);
+      }).catch(function(){el.innerHTML='<span class="meta">Video unavailable.</span>'});
+    });
+  }
+
+  function makeId(){
+    var a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",s="";
+    for(var i=0;i<5;i++)s+=a[Math.floor(Math.random()*a.length)];
+    return "RT-"+s;
+  }
+  function resetForm(){
+    st={type:null,photo:null,video:null};$("#prevVid").removeAttribute("src");$("#prevVid").hidden=true;$("#prevImg").hidden=false;
+    $$('input[name=type]').forEach(function(r){r.checked=false});
+    $("#prev").classList.remove("on");$("#prevImg").removeAttribute("src");
+    ["#loc","#det","#nm","#ct"].forEach(function(s){$(s).value=""});
+    $("#urg").value="Medium";$("#anon").checked=true;$("#idBox").hidden=true;$("#more").open=false;
+    $("#sendErr").hidden=true;$("#photoErr").hidden=true;
+  }
+
+  $("#send").addEventListener("click",async function(){
+    var btn=this;if(!st.type)return;
+    btn.disabled=true;btn.textContent="Sending...";$("#sendErr").hidden=true;
+    var anon=$("#anon").checked;
+    var rep={
+      id:makeId(),type:st.type,location:$("#loc").value.trim(),details:$("#det").value.trim(),
+      urgency:$("#more").open||$("#det").value.trim()?$("#urg").value:"Medium",
+      photo:st.photo||"",anonymous:anon,name:anon?"":$("#nm").value.trim(),contact:anon?"":$("#ct").value.trim(),
+      createdAt:Date.now(),status:"new"
+    };
+    if(st.video){try{await idbPut(rep.id,st.video);rep.video=true}catch(e){rep.video=false}}
+    var saved=false,local=false;
+    if(db){
+      try{await db.collection("reports").doc(rep.id).set(rep);saved=true}catch(e){saved=false}
+    }
+    if(!saved){
+      var arr=lsRead();arr.push(rep);
+      if(lsWrite(arr)){saved=true;local=true}
+      else{
+        rep.photo="";arr[arr.length-1]=rep;
+        if(lsWrite(arr)){saved=true;local=true}
+      }
+    }
+    btn.textContent="Send report";
+    if(!saved){btn.disabled=false;$("#sendErr").textContent="The report could not be saved. Check your connection and try again.";$("#sendErr").hidden=false;return}
+    $("#refCode").textContent=rep.id;$("#localNote").hidden=!local;
+    resetForm();go("done");
+  });
+
+  /* ---------- admin ---------- */
+  function setAdmin(v){isAdmin=v;try{v?sessionStorage.setItem(SS_KEY,"1"):sessionStorage.removeItem(SS_KEY)}catch(e){}}
+  try{if(sessionStorage.getItem(SS_KEY)==="1")isAdmin=true}catch(e){}
+
+  $("#loginForm").addEventListener("submit",function(e){
+    e.preventDefault();
+    var u=$("#au").value.trim().toLowerCase(),p=$("#ap").value;
+    if(u===ADMIN.user&&p===ADMIN.pass){
+      $("#loginErr").hidden=true;$("#au").value="";$("#ap").value="";setAdmin(true);go("inbox");
+    }else{$("#loginErr").hidden=false}
+  });
+  $("#logout").addEventListener("click",function(){setAdmin(false);go("home")});
+
+  $$(".tab").forEach(function(t){t.addEventListener("click",function(){
+    filter=t.getAttribute("data-f");
+    $$(".tab").forEach(function(x){x.setAttribute("aria-pressed",x===t?"true":"false")});
+    renderInbox();
+  })});
+
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function when(ts){
+    var d=new Date(ts),m=Math.round((Date.now()-ts)/60000);
+    var rel=m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":"";
+    var abs=d.toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+    return rel?rel+" · "+abs:abs;
+  }
+  function renderInbox(){
+    var host=$("#list");if(!host)return;
+    $("#modeDot").style.setProperty("--c",db?"var(--ok)":"var(--warn)");
+    $("#modeTxt").textContent=db?"Shared inbox":"This device only";
+    var all=allReports(),open=all.filter(function(r){return r.status!=="resolved"}).length;
+    $("#countTxt").textContent="";
+    $("#cTotal").textContent=all.length;$("#cNew").textContent=open;$("#cRes").textContent=all.length-open;
+    var rows=all.filter(function(r){return filter==="all"||(filter==="new"?r.status!=="resolved":r.status==="resolved")});
+    if(!rows.length){
+      host.innerHTML='<div class="empty"><b>'+(all.length?"Nothing in this view":"No reports yet")+'</b>'+(all.length?"Try another filter.":"Reports sent from the home screen appear here.")+'</div>';
+      return;
+    }
+    host.innerHTML=rows.map(function(r){
+      var who=r.anonymous?"Anonymous":esc(r.name||"Name not given")+(r.contact?" · "+esc(r.contact):"");
+      var res=r.status==="resolved";
+      return '<article class="card rep'+(res?" resolved":"")+'" style="--c:'+color(r.type)+'" data-id="'+esc(r.id)+'" data-src="'+r._src+'">'+
+        '<div class="top"><span class="pill" style="--c:'+color(r.type)+'"><i></i>'+esc(r.type)+'</span>'+
+        '<span class="meta">'+esc(r.id)+' · '+when(r.createdAt)+'</span></div>'+
+        '<div class="who"><b>'+(r.urgency?esc(r.urgency)+" urgency":"")+'</b>'+(r.location?" · "+esc(r.location):"")+'</div>'+
+        (r.details?'<p class="det">'+esc(r.details)+'</p>':'<p class="meta">No details added.</p>')+
+        (r.photo?'<img src="'+r.photo+'" alt="Photo attached to report '+esc(r.id)+'" data-zoom>':'')+
+        (r.video?'<div data-vid="'+esc(r.id)+'"><span class="meta">Loading video...</span></div>':'')+
+        '<div class="meta">Reported by: '+who+'</div>'+
+        (r._src==="device"&&db?'<div class="tag">Saved on a device only</div>':'')+
+        '<div class="row"><button class="btn sm ghost" data-act="toggle">'+(res?"Mark as new":"Mark resolved")+'</button>'+
+        '<button class="btn sm ghost" data-act="del">Delete</button></div></article>';
+    }).join("");
+    hydrateVideos();
+  }
+  var delTimer=null;
+  $("#list").addEventListener("click",async function(e){
+    var z=e.target.closest("[data-zoom]");
+    if(z){$("#lbImg").src=z.src;$("#lb").hidden=false;return}
+    var b=e.target.closest("[data-act]");if(!b)return;
+    var card=b.closest(".rep"),id=card.getAttribute("data-id"),src=card.getAttribute("data-src");
+    var r=allReports().filter(function(x){return x.id===id})[0];if(!r)return;
+    if(b.getAttribute("data-act")==="toggle"){
+      var ns=r.status==="resolved"?"new":"resolved";
+      if(src==="shared"&&db){try{await db.collection("reports").doc(id).update({status:ns})}catch(err){}}
+      else{var a=lsRead();a.forEach(function(x){if(x.id===id)x.status=ns});lsWrite(a);renderInbox()}
+    }else{
+      if(b.getAttribute("data-armed")!=="1"){
+        b.setAttribute("data-armed","1");b.textContent="Tap again to delete";
+        clearTimeout(delTimer);delTimer=setTimeout(function(){b.removeAttribute("data-armed");b.textContent="Delete"},3000);return;
+      }
+      if(src==="shared"&&db){try{await db.collection("reports").doc(id).delete()}catch(err){}}
+      else{lsWrite(lsRead().filter(function(x){return x.id!==id}));renderInbox()}
+    }
+  });
+  $("#lb").addEventListener("click",function(){this.hidden=true});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")$("#lb").hidden=true});
+
+  initDb();
+})();
+</script>
+
+</body></html>
